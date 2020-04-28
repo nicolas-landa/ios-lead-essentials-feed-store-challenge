@@ -5,13 +5,20 @@
 import XCTest
 import FeedStoreChallenge
 
-class CoreDataFeedStore: FeedStore {
+extension CoreDataFeedStore {
     func deleteCachedFeed(completion: @escaping DeletionCompletion) { }
     func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) { }
-    func retrieve(completion: @escaping RetrievalCompletion) { }
+}
+
+class CoreDataFeedStore: FeedStore {
+    
+    func retrieve(completion: @escaping RetrievalCompletion) {
+        completion(.empty)
+    }
 }
 
 class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
+	
 //
 //   We recommend you to implement one test at a time.
 //   Uncomment the test implementations one by one.
@@ -19,9 +26,9 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 //
 
 	func test_retrieve_deliversEmptyOnEmptyCache() {
-//		let sut = makeSUT()
-//
-//		assertThatRetrieveDeliversEmptyOnEmptyCache(on: sut)
+		let sut = makeSUT()
+
+		assertThatRetrieveDeliversEmptyOnEmptyCache(on: sut)
 	}
 
 	func test_retrieve_hasNoSideEffectsOnEmptyCache() {
