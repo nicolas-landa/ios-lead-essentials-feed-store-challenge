@@ -5,8 +5,13 @@
 import XCTest
 import FeedStoreChallenge
 
+class CoreDataFeedStore: FeedStore {
+    func deleteCachedFeed(completion: @escaping DeletionCompletion) { }
+    func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) { }
+    func retrieve(completion: @escaping RetrievalCompletion) { }
+}
+
 class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
-	
 //
 //   We recommend you to implement one test at a time.
 //   Uncomment the test implementations one by one.
@@ -88,7 +93,8 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	// - MARK: Helpers
 	
 	private func makeSUT() -> FeedStore {
-		fatalError("Must be implemented")
+		let coreDataFeedStore = CoreDataFeedStore()
+        return coreDataFeedStore
 	}
 	
 }
