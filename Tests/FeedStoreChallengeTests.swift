@@ -6,10 +6,6 @@ import XCTest
 import CoreData
 import FeedStoreChallenge
 
-extension CoreDataFeedStore {
-    func deleteCachedFeed(completion: @escaping DeletionCompletion) { }
-}
-
 class CoreDataFeedStore: FeedStore {
     
     private var context: NSManagedObjectContext
@@ -36,6 +32,12 @@ class CoreDataFeedStore: FeedStore {
         } catch {
             completion(error)
         }
+    }
+    
+    func deleteCachedFeed(completion: @escaping DeletionCompletion) {
+        markCurrentCacheAsDeleted(from: context)
+        try? context.save()
+        completion(nil)
     }
     
     private func fetchCache(from context: NSManagedObjectContext) -> CoreDataFeedCache? {
@@ -141,9 +143,9 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	}
 
 	func test_delete_deliversNoErrorOnEmptyCache() {
-//		let sut = makeSUT()
-//
-//		assertThatDeleteDeliversNoErrorOnEmptyCache(on: sut)
+		let sut = makeSUT()
+
+		assertThatDeleteDeliversNoErrorOnEmptyCache(on: sut)
 	}
 
 	func test_delete_hasNoSideEffectsOnEmptyCache() {
