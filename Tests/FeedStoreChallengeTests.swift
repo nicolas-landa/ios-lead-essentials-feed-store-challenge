@@ -19,10 +19,7 @@ class CoreDataFeedStore: FeedStore {
     }
     
     func retrieve(completion: @escaping RetrievalCompletion) {
-        let request: NSFetchRequest<CoreDataFeedCache> = CoreDataFeedCache.fetchRequest()
-        let results = try? context.fetch(request)
-        
-        if let cache = results?.first, let cached = map(cache) {
+        if let cache = fetchCache(from: context), let cached = map(cache) {
             completion(.found(feed: cached.feed, timestamp: cached.timestamp))
         } else {
             completion(.empty)
@@ -30,7 +27,8 @@ class CoreDataFeedStore: FeedStore {
     }
     
     func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
-        create(feed, timestamp: timestamp, into: context)
+        markCurrentCacheAsDeleted(from: context)
+        createCache(with: feed, timestamp: timestamp, into: context)
         
         do {
             try context.save()
@@ -40,7 +38,18 @@ class CoreDataFeedStore: FeedStore {
         }
     }
     
-    private func create(_ feed: [LocalFeedImage], timestamp: Date, into context: NSManagedObjectContext) {
+    private func fetchCache(from context: NSManagedObjectContext) -> CoreDataFeedCache? {
+        let request: NSFetchRequest<CoreDataFeedCache> = CoreDataFeedCache.fetchRequest()
+        return try? context.fetch(request).first
+    }
+    
+    private func markCurrentCacheAsDeleted(from context: NSManagedObjectContext) {
+        if let cache = fetchCache(from: context) {
+            context.delete(cache)
+        }
+    }
+    
+    private func createCache(with feed: [LocalFeedImage], timestamp: Date, into context: NSManagedObjectContext) {
         let coreDataFeed: [CoreDataFeedImage] = feed.enumerated().map { map($1, withPosition: $0, with: context) }
         
         let cache = CoreDataFeedCache(context: context)
@@ -126,9 +135,9 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	}
 
 	func test_insert_overridesPreviouslyInsertedCacheValues() {
-//		let sut = makeSUT()
-//
-//		assertThatInsertOverridesPreviouslyInsertedCacheValues(on: sut)
+		let sut = makeSUT()
+
+		assertThatInsertOverridesPreviouslyInsertedCacheValues(on: sut)
 	}
 
 	func test_delete_deliversNoErrorOnEmptyCache() {
