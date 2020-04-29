@@ -20,14 +20,10 @@ class CoreDataFeedStore: FeedStore {
     
     func retrieve(completion: @escaping RetrievalCompletion) {
         let request: NSFetchRequest<CoreDataFeedCache> = CoreDataFeedCache.fetchRequest()
-        let cache = try? context.fetch(request)
+        let results = try? context.fetch(request)
         
-        if let cache = cache?.first,
-            let feedSet = cache.feed,
-            feedSet.count > 0 {
-            
-            let feed = feedSet.sortedArray(using: [NSSortDescriptor(key: "position", ascending: true)]).compactMap({ $0 as? CoreDataFeedImage })
-            completion(.found(feed: feed.map { $0.toLocal() }, timestamp: cache.timestamp!))
+        if let cache = results?.first, let cached = map(cache) {
+            completion(.found(feed: cached.feed, timestamp: cached.timestamp))
         } else {
             completion(.empty)
         }
@@ -58,6 +54,15 @@ class CoreDataFeedStore: FeedStore {
         let cache = CoreDataFeedCache(context: context)
         cache.addToFeed(NSSet(array: coreDataFeed))
         cache.timestamp = timestamp
+    }
+    
+    private func map(_ cache: CoreDataFeedCache) -> (feed: [LocalFeedImage], timestamp: Date)? {
+        if let feedSet = cache.feed, feedSet.count > 0 {
+            let feed = feedSet.sortedArray(using: [NSSortDescriptor(key: "position", ascending: true)]).compactMap({ $0 as? CoreDataFeedImage })
+            return (feed: feed.map { $0.toLocal() }, timestamp: cache.timestamp!)
+        }
+        
+        return nil
     }
 }
 
