@@ -34,6 +34,17 @@ class CoreDataFeedStore: FeedStore {
     }
     
     func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
+        create(feed, timestamp: timestamp, into: context)
+        
+        do {
+            try context.save()
+            completion(nil)
+        } catch {
+            completion(error)
+        }
+    }
+    
+    private func create(_ feed: [LocalFeedImage], timestamp: Date, into context: NSManagedObjectContext) {
         let coreDataFeed: [CoreDataFeedImage] = feed.enumerated().map { (index, feedImage) in
             let coreDataFeedImage = CoreDataFeedImage(context: context)
             coreDataFeedImage.id = feedImage.id
@@ -47,13 +58,6 @@ class CoreDataFeedStore: FeedStore {
         let cache = CoreDataFeedCache(context: context)
         cache.addToFeed(NSSet(array: coreDataFeed))
         cache.timestamp = timestamp
-        
-        do {
-            try context.save()
-            completion(nil)
-        } catch {
-            completion(error)
-        }
     }
 }
 
