@@ -3,17 +3,64 @@
 //
 
 import XCTest
+import CoreData
 import FeedStoreChallenge
 
 extension CoreDataFeedStore {
     func deleteCachedFeed(completion: @escaping DeletionCompletion) { }
-    func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) { }
 }
 
 class CoreDataFeedStore: FeedStore {
     
+    private var context: NSManagedObjectContext
+    
+    init(context: NSManagedObjectContext) {
+        self.context = context
+    }
+    
     func retrieve(completion: @escaping RetrievalCompletion) {
-        completion(.empty)
+        let request: NSFetchRequest<CoreDataFeedCache> = CoreDataFeedCache.fetchRequest()
+        let cache = try? context.fetch(request)
+        
+        if let cache = cache?.first,
+            let feedSet = cache.feed,
+            feedSet.count > 0 {
+            
+            let feed = feedSet.sortedArray(using: [NSSortDescriptor(key: "position", ascending: true)]).compactMap({ $0 as? CoreDataFeedImage })
+            completion(.found(feed: feed.map { $0.toLocal() }, timestamp: cache.timestamp!))
+        } else {
+            completion(.empty)
+        }
+    }
+    
+    func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
+        let coreDataFeed: [CoreDataFeedImage] = feed.enumerated().map { (index, feedImage) in
+            let coreDataFeedImage = CoreDataFeedImage(context: context)
+            coreDataFeedImage.id = feedImage.id
+            coreDataFeedImage.managedDescription = feedImage.description
+            coreDataFeedImage.location = feedImage.location
+            coreDataFeedImage.url = feedImage.url
+            coreDataFeedImage.position = Int64(index)
+            return coreDataFeedImage
+        }
+        
+        let cache = CoreDataFeedCache(context: context)
+        cache.addToFeed(NSSet(array: coreDataFeed))
+        cache.timestamp = timestamp
+        
+        do {
+            try context.save()
+            completion(nil)
+        } catch {
+            completion(error)
+        }
+    }
+}
+
+private extension CoreDataFeedImage {
+    
+    func toLocal() -> LocalFeedImage {
+        LocalFeedImage(id: id!, description: managedDescription, location: location, url: url!)
     }
 }
 
@@ -24,6 +71,12 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 //   Uncomment the test implementations one by one.
 // 	 Follow the process: Make the test pass, commit, and move to the next one.
 //
+    
+    override func setUp() {
+        super.setUp()
+        
+        loadTestSpecificPersistentContainer()
+    }
 
 	func test_retrieve_deliversEmptyOnEmptyCache() {
 		let sut = makeSUT()
@@ -38,9 +91,9 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	}
 
 	func test_retrieve_deliversFoundValuesOnNonEmptyCache() {
-//		let sut = makeSUT()
-//
-//		assertThatRetrieveDeliversFoundValuesOnNonEmptyCache(on: sut)
+		let sut = makeSUT()
+        
+		assertThatRetrieveDeliversFoundValuesOnNonEmptyCache(on: sut)
 	}
 
 	func test_retrieve_hasNoSideEffectsOnNonEmptyCache() {
@@ -98,12 +151,39 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	}
 	
 	// - MARK: Helpers
+    
+    private var container: NSPersistentContainer!
 	
 	private func makeSUT() -> FeedStore {
-		let coreDataFeedStore = CoreDataFeedStore()
+        let context = container.viewContext
+        let coreDataFeedStore = CoreDataFeedStore(context: context)
         return coreDataFeedStore
 	}
-	
+    
+    private func loadTestSpecificPersistentContainer() {
+        let bundle: Bundle = Bundle(identifier: "com.essentialdeveloper.FeedStoreChallenge")!
+        let modelPath = bundle.path(forResource: "FeedStore", ofType: "momd")!
+        let modelURL = URL(fileURLWithPath: modelPath)
+        let managedModel = NSManagedObjectModel(contentsOf: modelURL)!
+        
+        let inMemoryDescription = NSPersistentStoreDescription()
+        inMemoryDescription.type = NSInMemoryStoreType
+        inMemoryDescription.shouldAddStoreAsynchronously = false
+        
+        container = NSPersistentContainer(name: "FeedStore", managedObjectModel: managedModel)
+        container.persistentStoreDescriptions = [inMemoryDescription]
+        
+        let exp = expectation(description: "Wait for CoreData load completion")
+        container.loadPersistentStores { (description, error) in
+            if let error = error {
+                XCTFail("Unexpected error \(error) when loading NSPersistentContainer")
+            }
+            
+            exp.fulfill()
+        }
+        
+        wait(for: [exp], timeout: 1.0)
+    }
 }
 
 //
