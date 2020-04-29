@@ -41,15 +41,7 @@ class CoreDataFeedStore: FeedStore {
     }
     
     private func create(_ feed: [LocalFeedImage], timestamp: Date, into context: NSManagedObjectContext) {
-        let coreDataFeed: [CoreDataFeedImage] = feed.enumerated().map { (index, feedImage) in
-            let coreDataFeedImage = CoreDataFeedImage(context: context)
-            coreDataFeedImage.id = feedImage.id
-            coreDataFeedImage.managedDescription = feedImage.description
-            coreDataFeedImage.location = feedImage.location
-            coreDataFeedImage.url = feedImage.url
-            coreDataFeedImage.position = Int64(index)
-            return coreDataFeedImage
-        }
+        let coreDataFeed: [CoreDataFeedImage] = feed.enumerated().map { map($1, withPosition: $0, with: context) }
         
         let cache = CoreDataFeedCache(context: context)
         cache.addToFeed(NSSet(array: coreDataFeed))
@@ -63,6 +55,16 @@ class CoreDataFeedStore: FeedStore {
         }
         
         return nil
+    }
+    
+    private func map(_ feedImage: LocalFeedImage, withPosition index: Int, with context: NSManagedObjectContext) -> CoreDataFeedImage {
+        let coreDataFeedImage = CoreDataFeedImage(context: context)
+        coreDataFeedImage.id = feedImage.id
+        coreDataFeedImage.managedDescription = feedImage.description
+        coreDataFeedImage.location = feedImage.location
+        coreDataFeedImage.url = feedImage.url
+        coreDataFeedImage.position = Int64(index)
+        return coreDataFeedImage
     }
 }
 
