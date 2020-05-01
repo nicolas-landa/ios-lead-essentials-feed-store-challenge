@@ -15,13 +15,13 @@ public class CoreDataFeedStore: FeedStore {
         self.context = context
     }
     
-    private func fetchCache(from context: NSManagedObjectContext) -> CoreDataFeedCache? {
+    private func fetchCurrentCache(from context: NSManagedObjectContext) -> CoreDataFeedCache? {
         let request: NSFetchRequest<CoreDataFeedCache> = CoreDataFeedCache.fetchRequest()
         return try? context.fetch(request).first
     }
     
     private func markCurrentCacheAsDeleted(from context: NSManagedObjectContext) {
-        if let cache = fetchCache(from: context) {
+        if let cache = fetchCurrentCache(from: context) {
             context.delete(cache)
         }
     }
@@ -30,7 +30,7 @@ public class CoreDataFeedStore: FeedStore {
 extension CoreDataFeedStore {
     
     public func retrieve(completion: @escaping RetrievalCompletion) {
-        if let cache = self.fetchCache(from: context), let cached = self.map(cache) {
+        if let cache = self.fetchCurrentCache(from: context), let cached = self.map(cache) {
             completion(.found(feed: cached.feed, timestamp: cached.timestamp))
         } else {
             completion(.empty)
