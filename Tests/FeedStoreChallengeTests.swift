@@ -9,6 +9,11 @@ import FeedStoreChallenge
 class CoreDataFeedStore: FeedStore {
     
     private var context: NSManagedObjectContext
+    private lazy var backgroundContext: NSManagedObjectContext = {
+        let backgroundContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+        backgroundContext.parent = context
+        return backgroundContext
+    }()
     
     init(context: NSManagedObjectContext) {
         self.context = context
@@ -23,9 +28,6 @@ class CoreDataFeedStore: FeedStore {
     }
     
     func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
-        let backgroundContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-        backgroundContext.parent = context
-        
         backgroundContext.performAndWait {
             self.markCurrentCacheAsDeleted(from: backgroundContext)
             self.createCache(with: feed, timestamp: timestamp, into: backgroundContext)
@@ -40,9 +42,6 @@ class CoreDataFeedStore: FeedStore {
     }
     
     func deleteCachedFeed(completion: @escaping DeletionCompletion) {
-        let backgroundContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-        backgroundContext.parent = context
-        
         backgroundContext.performAndWait {
             self.markCurrentCacheAsDeleted(from: backgroundContext)
             try? backgroundContext.save()
