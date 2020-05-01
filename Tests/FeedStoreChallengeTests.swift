@@ -15,7 +15,7 @@ class CoreDataFeedStore: FeedStore {
     }
     
     func retrieve(completion: @escaping RetrievalCompletion) {
-        if let cache = fetchCache(from: context), let cached = map(cache) {
+        if let cache = self.fetchCache(from: context), let cached = self.map(cache) {
             completion(.found(feed: cached.feed, timestamp: cached.timestamp))
         } else {
             completion(.empty)
@@ -23,21 +23,31 @@ class CoreDataFeedStore: FeedStore {
     }
     
     func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
-        markCurrentCacheAsDeleted(from: context)
-        createCache(with: feed, timestamp: timestamp, into: context)
+        let backgroundContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+        backgroundContext.parent = context
         
-        do {
-            try context.save()
-            completion(nil)
-        } catch {
-            completion(error)
+        backgroundContext.performAndWait {
+            self.markCurrentCacheAsDeleted(from: backgroundContext)
+            self.createCache(with: feed, timestamp: timestamp, into: backgroundContext)
+            
+            do {
+                try backgroundContext.save()
+                completion(nil)
+            } catch {
+                completion(error)
+            }
         }
     }
     
     func deleteCachedFeed(completion: @escaping DeletionCompletion) {
-        markCurrentCacheAsDeleted(from: context)
-        try? context.save()
-        completion(nil)
+        let backgroundContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+        backgroundContext.parent = context
+        
+        backgroundContext.performAndWait {
+            self.markCurrentCacheAsDeleted(from: backgroundContext)
+            try? backgroundContext.save()
+            completion(nil)
+        }
     }
     
     private func fetchCache(from context: NSManagedObjectContext) -> CoreDataFeedCache? {
@@ -167,9 +177,9 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	}
 
 	func test_storeSideEffects_runSerially() {
-//		let sut = makeSUT()
-//
-//		assertThatSideEffectsRunSerially(on: sut)
+		let sut = makeSUT()
+
+		assertThatSideEffectsRunSerially(on: sut)
 	}
 	
 	// - MARK: Helpers
