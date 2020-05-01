@@ -95,6 +95,12 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	// - MARK: Helpers
     
     private var container: NSPersistentContainer!
+    private static let model: NSManagedObjectModel = {
+        let bundle: Bundle = Bundle(identifier: "com.essentialdeveloper.FeedStoreChallenge")!
+        let modelPath = bundle.path(forResource: "FeedStore", ofType: "momd")!
+        let modelURL = URL(fileURLWithPath: modelPath)
+        return NSManagedObjectModel(contentsOf: modelURL)!
+    }()
 	
 	private func makeSUT() -> FeedStore {
         let context = container.viewContext
@@ -103,11 +109,6 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	}
     
     private func loadTestSpecificPersistentContainer() {
-        let bundle: Bundle = Bundle(identifier: "com.essentialdeveloper.FeedStoreChallenge")!
-        let modelPath = bundle.path(forResource: "FeedStore", ofType: "momd")!
-        let modelURL = URL(fileURLWithPath: modelPath)
-        let managedModel = NSManagedObjectModel(contentsOf: modelURL)!
-        
         let inMemoryDescription = NSPersistentStoreDescription()
         inMemoryDescription.type = NSInMemoryStoreType
         inMemoryDescription.shouldAddStoreAsynchronously = false
