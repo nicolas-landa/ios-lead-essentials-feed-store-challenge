@@ -113,7 +113,7 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
         inMemoryDescription.type = NSInMemoryStoreType
         inMemoryDescription.shouldAddStoreAsynchronously = false
         
-        container = NSPersistentContainer(name: "FeedStore", managedObjectModel: managedModel)
+        container = NSPersistentContainer(name: "FeedStore", managedObjectModel: FeedStoreChallengeTests.model)
         container.persistentStoreDescriptions = [inMemoryDescription]
         
         let exp = expectation(description: "Wait for CoreData load completion")
