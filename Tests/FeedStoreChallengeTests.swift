@@ -96,7 +96,7 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
     
     private var container: NSPersistentContainer!
     private static let model: NSManagedObjectModel = {
-        let bundle: Bundle = Bundle(identifier: "com.essentialdeveloper.FeedStoreChallenge")!
+        let bundle: Bundle = Bundle(for: CoreDataFeedStore.self)
         let modelPath = bundle.path(forResource: "FeedStore", ofType: "momd")!
         let modelURL = URL(fileURLWithPath: modelPath)
         return NSManagedObjectModel(contentsOf: modelURL)!
