@@ -16,7 +16,7 @@ public class CoreDataFeedStore: FeedStore {
     }
     
     private func fetchCurrentCache(from context: NSManagedObjectContext) -> CoreDataFeedCache? {
-        let request: NSFetchRequest<CoreDataFeedCache> = CoreDataFeedCache.fetchRequest()
+        let request = NSFetchRequest<CoreDataFeedCache>(entityName: CoreDataFeedCache.entity().name!)
         return try? context.fetch(request).first
     }
     
@@ -38,9 +38,9 @@ extension CoreDataFeedStore {
     }
     
     private func map(_ cache: CoreDataFeedCache) -> (feed: [LocalFeedImage], timestamp: Date)? {
-        if let feedSet = cache.feed, feedSet.count > 0 {
-            let feed = feedSet.compactMap({ $0 as? CoreDataFeedImage }).map { $0.toLocal() }
-            return (feed: feed, timestamp: cache.timestamp!)
+        if cache.feed.count > 0 {
+            let feed = cache.feed.compactMap({ $0 as? CoreDataFeedImage }).map { $0.toLocal() }
+            return (feed: feed, timestamp: cache.timestamp)
         }
         
         return nil
@@ -67,7 +67,7 @@ extension CoreDataFeedStore {
         let coreDataFeed: [CoreDataFeedImage] = feed.map { map($0, with: context) }
         
         let cache = CoreDataFeedCache(context: context)
-        cache.addToFeed(NSOrderedSet(array: coreDataFeed))
+        cache.feed = NSOrderedSet(array: coreDataFeed)
         cache.timestamp = timestamp
     }
     
@@ -95,6 +95,6 @@ extension CoreDataFeedStore {
 private extension CoreDataFeedImage {
     
     func toLocal() -> LocalFeedImage {
-        LocalFeedImage(id: id!, description: managedDescription, location: location, url: url!)
+        LocalFeedImage(id: id, description: managedDescription, location: location, url: url)
     }
 }

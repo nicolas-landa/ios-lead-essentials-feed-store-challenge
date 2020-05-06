@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="16119" systemVersion="19E287" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
-    <entity name="CoreDataFeedCache" representedClassName="CoreDataFeedCache" syncable="YES" codeGenerationType="class">
+    <entity name="CoreDataFeedCache" representedClassName="CoreDataFeedCache" syncable="YES">
         <attribute name="timestamp" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="feed" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="CoreDataFeedImage" inverseName="cache" inverseEntity="CoreDataFeedImage"/>
     </entity>
-    <entity name="CoreDataFeedImage" representedClassName="CoreDataFeedImage" syncable="YES" codeGenerationType="class">
-        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+    <entity name="CoreDataFeedImage" representedClassName="CoreDataFeedImage" syncable="YES">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="location" optional="YES" attributeType="String"/>
-        <attribute name="managedDescription" attributeType="String"/>
+        <attribute name="managedDescription" optional="YES" attributeType="String"/>
         <attribute name="url" attributeType="URI"/>
         <relationship name="cache" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CoreDataFeedCache" inverseName="feed" inverseEntity="CoreDataFeedCache"/>
     </entity>
