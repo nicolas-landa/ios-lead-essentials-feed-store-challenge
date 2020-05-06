@@ -19,6 +19,12 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
         
         loadTestSpecificPersistentContainer()
     }
+    
+    override func tearDown() {
+        super.tearDown()
+        
+        container = nil
+    }
 
 	func test_retrieve_deliversEmptyOnEmptyCache() {
 		let sut = makeSUT()
