@@ -86,8 +86,13 @@ extension CoreDataFeedStore {
     public func deleteCachedFeed(completion: @escaping DeletionCompletion) {
         backgroundContext.performAndWait {
             self.markCurrentCacheAsDeleted(from: backgroundContext)
-            try? backgroundContext.save()
-            completion(nil)
+            
+            do {
+                try backgroundContext.save()
+                completion(nil)
+            } catch {
+                completion(error)
+            }
         }
     }
 }
