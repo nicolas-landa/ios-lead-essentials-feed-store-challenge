@@ -39,8 +39,8 @@ extension CoreDataFeedStore {
     
     private func map(_ cache: CoreDataFeedCache) -> (feed: [LocalFeedImage], timestamp: Date)? {
         if let feedSet = cache.feed, feedSet.count > 0 {
-            let feed = feedSet.sortedArray(using: [NSSortDescriptor(key: "position", ascending: true)]).compactMap({ $0 as? CoreDataFeedImage })
-            return (feed: feed.map { $0.toLocal() }, timestamp: cache.timestamp!)
+            let feed = feedSet.compactMap({ $0 as? CoreDataFeedImage }).map { $0.toLocal() }
+            return (feed: feed, timestamp: cache.timestamp!)
         }
         
         return nil
@@ -64,20 +64,19 @@ extension CoreDataFeedStore {
     }
     
     private func createCache(with feed: [LocalFeedImage], timestamp: Date, into context: NSManagedObjectContext) {
-        let coreDataFeed: [CoreDataFeedImage] = feed.enumerated().map { map($1, withPosition: $0, with: context) }
+        let coreDataFeed: [CoreDataFeedImage] = feed.map { map($0, with: context) }
         
         let cache = CoreDataFeedCache(context: context)
-        cache.addToFeed(NSSet(array: coreDataFeed))
+        cache.addToFeed(NSOrderedSet(array: coreDataFeed))
         cache.timestamp = timestamp
     }
     
-    private func map(_ feedImage: LocalFeedImage, withPosition index: Int, with context: NSManagedObjectContext) -> CoreDataFeedImage {
+    private func map(_ feedImage: LocalFeedImage, with context: NSManagedObjectContext) -> CoreDataFeedImage {
         let coreDataFeedImage = CoreDataFeedImage(context: context)
         coreDataFeedImage.id = feedImage.id
         coreDataFeedImage.managedDescription = feedImage.description
         coreDataFeedImage.location = feedImage.location
         coreDataFeedImage.url = feedImage.url
-        coreDataFeedImage.position = Int64(index)
         return coreDataFeedImage
     }
 }
