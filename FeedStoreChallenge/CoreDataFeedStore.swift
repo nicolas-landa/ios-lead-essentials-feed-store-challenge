@@ -25,15 +25,23 @@ public class CoreDataFeedStore: FeedStore {
             context.delete(cache)
         }
     }
+    
+    private func perform(in context: NSManagedObjectContext, action: @escaping (NSManagedObjectContext) -> Void) {
+        context.perform {
+            action(context)
+        }
+    }
 }
 
 extension CoreDataFeedStore {
     
     public func retrieve(completion: @escaping RetrievalCompletion) {
-        if let cache = self.fetchCurrentCache(from: context), let cached = self.map(cache) {
-            completion(.found(feed: cached.feed, timestamp: cached.timestamp))
-        } else {
-            completion(.empty)
+        perform(in: backgroundContext) { context in
+            if let cache = self.fetchCurrentCache(from: context), let cached = self.map(cache) {
+                completion(.found(feed: cached.feed, timestamp: cached.timestamp))
+            } else {
+                completion(.empty)
+            }
         }
     }
     
@@ -50,12 +58,12 @@ extension CoreDataFeedStore {
 extension CoreDataFeedStore {
 
     public func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
-        backgroundContext.performAndWait {
-            self.markCurrentCacheAsDeleted(from: backgroundContext)
-            self.createCache(with: feed, timestamp: timestamp, into: backgroundContext)
+        perform(in: backgroundContext) { context in
+            self.markCurrentCacheAsDeleted(from: context)
+            self.createCache(with: feed, timestamp: timestamp, into: context)
             
             do {
-                try backgroundContext.save()
+                try context.save()
                 completion(nil)
             } catch {
                 completion(error)
@@ -84,11 +92,11 @@ extension CoreDataFeedStore {
 extension CoreDataFeedStore {
 
     public func deleteCachedFeed(completion: @escaping DeletionCompletion) {
-        backgroundContext.performAndWait {
-            self.markCurrentCacheAsDeleted(from: backgroundContext)
+        perform(in: backgroundContext) { context in
+            self.markCurrentCacheAsDeleted(from: context)
             
             do {
-                try backgroundContext.save()
+                try context.save()
                 completion(nil)
             } catch {
                 completion(error)
